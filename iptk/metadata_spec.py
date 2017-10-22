@@ -53,20 +53,30 @@ class MetadataSpec(object):
         self.name = name
         self.version = version
         self.generator = generator
-    
+
     @property
-    def spec(self):
+    def minimal_spec(self):
+        """
+        The minimal specification which is also used to create the unique
+        identifier.
+        """
         spec = {
             "name": self.name,
             "organization": self.organization,
-            "version": self.version,
-            "generator": self.generator.spec()
+            "version": self.version
         }
+        return spec
+    
+    @property
+    def spec(self):
+        spec = self.minimal_spec
+        if self.generator:
+            spec["generator"] = self.generator.spec()
         return spec
         
     @property
     def identifier(self):
-        return json_hash(self.spec)
+        return json_hash(self.minimal_spec)
         
     def __repr__(self):
         return f"<{self.__class__.__name__} {self.identifier}>"

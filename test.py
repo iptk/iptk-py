@@ -7,6 +7,7 @@ from iptk.docker_utils import get_parts, get_reference
 from iptk.runner import Runner
 from iptk.dataset_store import DatasetStore
 from iptk.metadata_spec import MetadataSpec, MetadataGenerator
+from iptk.metadata import KeyValueMetadata
 
 # Create a dataset store
 s = DatasetStore("/Users/janten/Desktop/datasets")
@@ -17,7 +18,7 @@ d = s.get_dataset("9953b9152702d1094aadea9c686584b10f385b84", create_ok=True)
 
 # Create a metadata specification with a generator and glob patterns
 globs = ["*.dcm"]
-registry, repository, tag, digest = get_parts("registry.docker.neuro.ukm.ms/nps/dicom-indexer:8ee3441")
+registry, repository, tag, digest = get_parts("neurology/jupyter:latest")
 g = MetadataGenerator(registry, repository, digest, globs)
 m = MetadataSpec("University of Münster", "DICOM Headers", 1, g)
 
@@ -26,15 +27,16 @@ print(m.generator.should_fire(d))
 
 # Create a metadata specification without a generator and store some data 
 # inside. The Metadata class represents a pair of a dataset and a MetadataSpec.
-# The KeyValueMetadata subclass provides additional methods manpulate a 
+# The KeyValueMetadata subclass provides additional methods manipulate a 
 # dataset's metadata.
 m = MetadataSpec("University of Münster", "Tags", 1)
-# k = KeyValueMetadata(d, m)
-tags = ["New", "Cool!", "\U0001F4A9"]
-print(tags)
+k = KeyValueMetadata(d, m)
+k["tags"] = ["New", "Cool!", "\U0001F4A9"]
+k["cool"] = True
+k.save()
+print(k)
 
 valid_descriptors = [
-    "registry.docker.neuro.ukm.ms/janten/matlab:9.2",
     "neurology/jupyter:latest",
     "hello-world"
 ]
@@ -57,7 +59,7 @@ job = {
     "version": 3
 }
 
-for desc in valid_descriptors:
-    registry, repository, tag, digest = get_parts(desc)
-    print(get_reference(registry, repository, digest))
+#for desc in valid_descriptors:
+#    registry, repository, tag, digest = get_parts(desc)
+#    print(get_reference(registry, repository, digest))
 

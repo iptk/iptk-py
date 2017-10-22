@@ -25,7 +25,7 @@ def get_parts(reference):
     # Parse domain part, if any
     if "/" in reference:
         domain, remainder = reference.split("/", 1)
-        if domain == "localhost" or "." in domain:
+        if domain == "localhost" or "." in domain or ":" in domain:
             registry = domain
             repository = remainder
     # Separate image reference and digest
