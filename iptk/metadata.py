@@ -1,54 +1,32 @@
 import collections, json, os
 
-class Metadata(object):
-    """
-    Each instance of the Metadata class represents the concrete Metadata of a
-    given metadata specification attached to a single dataset.
-    """
-    def __init__(self, dataset, spec):
-        super(Metadata, self).__init__()
-        self.dataset = dataset
-        self.spec = spec
-        self.initialize()
-        
-    @property
-    def path(self):
-        return os.path.join(self.dataset.path, "meta", self.spec.identifier)
-
-    def initialize(self):
-        os.makedirs(self.path, exist_ok=True)
-    
-class KeyValueMetadata(Metadata, collections.abc.MutableMapping):
+class KeyValueMetadata(collections.abc.MutableMapping):
     """
     The KeyValueMetadata class handles acts as a wrapper to a datasets metadata
     of a given specification to create a simple key-value store. It can be used
     like a dict object (i.e. kvm["key"] = value) but only strings are accepted
     as keys and values can only be strings, floats, integers, boolean values,
-    or one-dimensional arrays of one of this types. These values are stored in
-    a file called iptk-kv.json within the metadata directory. Current values
-    will be read from the file on instance creation time and can be read again
+    or one-dimensional arrays of one of this types. Current values will be read
+    from the dataset store on instance creation time and can be read again
     using the reload() method. You must explicitly call save() to write any 
-    changes back to disk.
+    changes back to the store.
     """
-    def __init__(self, *args, **kwargs):
-        super(KeyValueMetadata, self).__init__(*args, **kwargs)
+    def __init__(self, dataset, store, spec):
+        super(KeyValueMetadata, self).__init__()
+        self.dataset = dataset
+        self.store = store
+        self.spec = spec
         self.dictionary = None
         self.reload()
-        
-    @property
-    def file_path(self):
-        return os.path.join(self.path, "iptk-kv.json")
-    
+
     def reload(self):
-        self.dictionary = {}
-        if not os.path.exists(self.file_path):
-            return
-        with open(self.file_path, "r") as f:
-            self.dictionary = json.load(f)
-    
+        dictionary = self.store.get_metadata(self.dataset, self.spec)
+        if not isinstance(dictionary, dict):
+            dictionary = {}
+        self.dictionary = dictionary
+
     def save(self):
-        with open(self.file_path, "w") as f:
-            json.dump(self.dictionary, f, sort_keys=True, indent=4, separators=(',', ': '))
+        self.store.set_metadata(self.dataset, self.spec, self.dictionary)
         self.reload()
         
     def __getitem__(self, key):

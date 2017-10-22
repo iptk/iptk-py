@@ -1,4 +1,4 @@
-import os, re
+import json, os, re, shutil
 from .dataset import Dataset
 
 class DatasetStore(object):
@@ -7,6 +7,51 @@ class DatasetStore(object):
         super(DatasetStore, self).__init__()
         self.root_path = root_path
     
+    def get_path(self, dataset):
+        """
+        Returns the path of the requested dataset on disk.
+        """
+        subdir = "/".join(list(dataset.identifier[:4]))
+        path = os.path.join(self.root_path, subdir, dataset.identifier)
+        return path
+
+    def get_data_path(self, dataset, mutable=None):
+        """
+        Returns the full path to the given dataset's data/ directory. If the
+        mutable argument is set, an exception is raised for locked datasets (if
+        mutable == True) or unlocked datasets (if mutable == False).
+        """
+        if (mutable is not None) and (self.is_locked(dataset) == mutable):
+            raise ValueError("Dataset lock state does not match request")
+        dataset_path = self.get_path(dataset)
+        return os.path.join(dataset_path, "data")
+        
+    def get_meta_path(self, dataset, spec):
+        dataset_path = self.get_path(dataset)
+        return os.path.join(dataset_path, "meta", f"{spec.identifier}.json")
+        
+    def get_metadata(self, dataset, spec):
+        """
+        Returns the metadata saved within this store for the given combination
+        of dataset and metadata specification.
+        """
+        path = self.get_meta_path(dataset, spec)
+        if not os.path.exists(path):
+            return None
+        with open(path, "r") as f:
+            return json.load(f)
+
+    def set_metadata(self, dataset, spec, data):
+        """
+        Sets the metadata for the given dataset and metadata specification. The
+        data object must be JSON-serializable. Note that your changes may be
+        overwritten if the metadata specification is associated with a metadata
+        generator.
+        """
+        path = self.get_meta_path(dataset, spec)
+        with open(path, "w+") as f:
+            return json.dump(data, f, sort_keys=True, indent=4, separators=(',', ': '))
+
     def get_dataset(self, dataset_id, create_ok=False):
         """
         Fetch a Dataset object backed by this DatasetStore. Raises a value
@@ -15,10 +60,32 @@ class DatasetStore(object):
         method can optionally create an empty dataset if no dataset with the
         given identifier exists. 
         """
-        if not re.match("^[0-9a-z]{40}$", dataset_id):
-            raise ValueError('Invalid dataset identifier')
-        subdir = "/".join(list(dataset_id[:4]))
-        path = os.path.join(self.root_path, subdir, dataset_id)
-        if not os.path.exists(path) and not create_ok:
-            raise ValueError('No existing dataset at path and create_ok is False')
-        return Dataset(path)
+        dataset = Dataset(dataset_id, self)
+        path = self.get_path(dataset)
+        if not os.path.exists(path):
+            if create_ok:
+                subdirs = ["temp", "data", "meta"]
+                for s in subdirs:
+                    os.makedirs(os.path.join(path, s), exist_ok=True)
+            else:
+                raise ValueError("Dataset not found in this store")
+        return dataset
+    
+    def is_locked(self, dataset):
+        tmp_dir = os.path.join(self.get_path(dataset), 'temp')
+        return not os.path.exists(tmp_dir)
+        
+    def lock_dataset(self, dataset):
+        """
+        Locks the dataset. Locked datasets can be used as job inputs but the
+        content of their data/ directory must remain unchanged. A locked 
+        dataset is indicated by the absence of a temp/ subdirectory. Unlocking
+        a dataset by re-creating temp/ is not allowed and may lead to 
+        unpleasant side effects. Locking a locked dataset is a no-op.
+        """
+        tmp_dir = os.path.join(self.get_path(dataset), 'temp')
+        if os.path.exists(tmp_dir):
+            shutil.rmtree(tmp_dir)
+
+    def __repr__(self):
+        return f"<{self.__class__.__name__} {self.root_path}>"
