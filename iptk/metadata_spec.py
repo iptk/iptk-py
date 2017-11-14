@@ -69,7 +69,7 @@ class MetadataSpec(object):
     def spec(self):
         spec = self.minimal_spec
         if self.generator:
-            spec["generator"] = self.generator.spec()
+            spec["generator"] = self.generator.spec
         return spec
         
     @property

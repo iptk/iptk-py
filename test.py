@@ -116,10 +116,11 @@ meta_path = store.get_meta_path(dataset, metadata_spec)
 # datasets if all of their filters match the dataset's contents. The contents
 # will be mounted into the container at /input and the container has to write
 # its metadata to /output/meta.json.
-image = DockerImage("neurology/dicom-to-json")
+image = DockerImage("janten/nps-dicom-to-json")
 filters = ["*.dcm"]
 generator = MetadataGenerator(image, filters)
 metadata_spec = MetadataSpec("University of Münster", "DICOM Headers", 1, generator)
+print(metadata_spec.spec)
 
 # Should be True
 metadata_spec.generator.should_fire(dataset, store)
