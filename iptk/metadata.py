@@ -11,8 +11,8 @@ class KeyValueMetadata(collections.abc.MutableMapping):
     using the reload() method. You must explicitly call save() to write any 
     changes back to the store.
     """
-    def __init__(self, dataset, store, spec):
-        super(KeyValueMetadata, self).__init__()
+    def __init__(self, dataset, spec):
+        super().__init__()
         self.dataset = dataset
         self.store = store
         self.spec = spec
@@ -20,12 +20,19 @@ class KeyValueMetadata(collections.abc.MutableMapping):
         self.reload()
 
     def reload(self):
+        """
+        Discard all changes and load the current values stored on disk inside
+        the dataset. Automatically called during initialization.
+        """
         dictionary = self.store.get_metadata(self.dataset, self.spec)
         if not isinstance(dictionary, dict):
             dictionary = {}
         self.dictionary = dictionary
 
     def save(self):
+        """
+        Write any changes you made back to the underlaying dataset.
+        """
         self.store.set_metadata(self.dataset, self.spec, self.dictionary)
         self.reload()
         

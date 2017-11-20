@@ -1,20 +1,18 @@
 import docker, redis, uuid
-from .dataset_store import DatasetStore
 from .dataset import Dataset
 from .metadata_spec import MetadataSpec
 from .job import Job
 
 class Runner(object):
     """
-    Runner objects implement a simple way to execute IPTK jobs. A runner can
+    Runner objects implement a simple way to execute jobs in IPTK. A runner can
     either be used manually, trough the process_dataset() method, or 
     automatically. Use the connect() method to connect the runner to a Redis
     instance for an automated runner. It will then fetch dataset identifiers
     from a Redis queue which can be shared across multiple runners.
     """
-    def __init__(self, store: DatasetStore):
-        super(Runner, self).__init__()
-        self.store = store
+    def __init__(self):
+        super().__init__()
         self.uuid = str(uuid.uuid4())
             
     def claim_dataset(self, dataset):
@@ -25,7 +23,7 @@ class Runner(object):
         runner. If you develop your own runner you are encouraged to copy this
         method, including the metadata specification.
         """
-        if self.store.is_locked(dataset):
+        if dataset.is_locked:
             return False
         spec = MetadataSpec("University of Münster", "IPTK Runner", 1)
         claim = self.store.get_metadata(dataset, spec)

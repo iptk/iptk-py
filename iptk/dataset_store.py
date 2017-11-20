@@ -71,21 +71,7 @@ class DatasetStore(object):
                 raise ValueError("Dataset not found in this store")
         return dataset
     
-    def is_locked(self, dataset):
-        tmp_dir = os.path.join(self.get_path(dataset), 'temp')
-        return not os.path.exists(tmp_dir)
-        
-    def lock_dataset(self, dataset):
-        """
-        Locks the dataset. Locked datasets can be used as job inputs but the
-        content of their data/ directory must remain unchanged. A locked 
-        dataset is indicated by the absence of a temp/ subdirectory. Unlocking
-        a dataset by re-creating temp/ is not allowed and may lead to 
-        unpleasant side effects. Locking a locked dataset is a no-op.
-        """
-        tmp_dir = os.path.join(self.get_path(dataset), 'temp')
-        if os.path.exists(tmp_dir):
-            shutil.rmtree(tmp_dir)
+
 
     def __repr__(self):
         return f"<{self.__class__.__name__} {self.root_path}>"
