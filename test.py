@@ -5,7 +5,7 @@ if __name__ == '__main__' and __package__ is None:
 
 import os, shutil
 from glob import glob
-from iptk.dataset import Dataset
+from iptk import Dataset
 from iptk.metadata_spec import MetadataSpec, MetadataGenerator
 from iptk.metadata import KeyValueMetadata
 

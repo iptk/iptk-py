@@ -62,7 +62,7 @@ class Dataset(object):
         meta_path = os.path.join(self.path, "meta")
         if not os.path.exists(meta_path):
             os.makedirs(meta_path, exist_ok=True)
-        json_path = os.path.join(meta_path, f"{metadata_id}.json")
+        json_path = os.path.join(meta_path, f"{spec_id}.json")
         return json_path
 
     def get_metadata(self, spec_id):
@@ -83,11 +83,8 @@ class Dataset(object):
         Set the metadata to store for a specified metadata specification. This
         method will create a new metadata set if none existed before.
         
-        Args:
-            spec_id (str): Metadata specification identifier. Must be a valid
-        IPTK identifier.
-            data (dict): The data to store in the metadata set. Must be a 
-        JSON-serializable dictionary.
+        :param spec_id: Metadata specification identifier. Must be a valid IPTK identifier.
+        :param data: The data to store in the metadata set. Must be a JSON-serializable dictionary.
         """
         path = self.metadata_path(spec_id)
         with open(path, "w") as f:
