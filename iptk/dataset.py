@@ -21,6 +21,10 @@ class Dataset(object):
 
     @property
     def data_dir(self):
+        """
+        Return the path to the data/ subfolder of this dataset. The folder will
+        be created if it does not exist.
+        """
         path = os.path.join(self.path, 'data')
         os.makedirs(path, exist_ok=True)
         return path
@@ -48,23 +52,44 @@ class Dataset(object):
         if not self.is_locked:
             os.makedirs(self.lock_dir, exist_ok=True)
 
-    def metadata_path(self, metadata_id):
+    def metadata_path(self, spec_id):
+        """
+        Returns the path to the JSON file containing the metadata set compliant
+        with the given metadata specification identifier for this dataset. This
+        method will always return a path, even if no file exists at that 
+        location.
+        """
         meta_path = os.path.join(self.path, "meta")
         if not os.path.exists(meta_path):
             os.makedirs(meta_path, exist_ok=True)
         json_path = os.path.join(meta_path, f"{metadata_id}.json")
         return json_path
 
-    def get_metadata(self, metadata_id):
-        path = self.metadata_path(metadata_id)
+    def get_metadata(self, spec_id):
+        """
+        Read the metadata of this dataset for the given metadata specification
+        identifier. Returns an empty dictionary if no metadata has been set for
+        the identifier.
+        """
+        path = self.metadata_path(spec_id)
         if not os.path.exists(path):
             return {}
         with open(path, "r") as f:
             dictionary = json.load(f)
         return dictionary
 
-    def set_metadata(self, metadata_id, data):
-        path = self.metadata_path(metadata_id)
+    def set_metadata(self, spec_id, data):
+        """
+        Set the metadata to store for a specified metadata specification. This
+        method will create a new metadata set if none existed before.
+        
+        Args:
+            spec_id (str): Metadata specification identifier. Must be a valid
+        IPTK identifier.
+            data (dict): The data to store in the metadata set. Must be a 
+        JSON-serializable dictionary.
+        """
+        path = self.metadata_path(spec_id)
         with open(path, "w") as f:
             json.dump(data, f)
         return data
