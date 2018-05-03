@@ -1,4 +1,5 @@
-import os, re, json, shutil
+import os, re, json, shutil, zipstream
+from glob import glob
 
 class Dataset(object):
     """
@@ -29,28 +30,14 @@ class Dataset(object):
         os.makedirs(path, exist_ok=True)
         return path
 
-    @property
-    def lock_dir(self):
-        return os.path.join(self.path, 'lock')
-
-    @property
-    def is_locked(self):
-        """
-        Returns whether this dataset is locked. Locked datasets cannot be
-        manipulated.
-        """
-        return os.path.exists(self.lock_dir)
-
-    def lock(self):
-        """
-        Locks the dataset. Locked datasets can be used as job inputs but the
-        content of their data/ directory must remain unchanged. A locked 
-        dataset is indicated by the existence of a lock/ subdirectory. 
-        Unlocking a dataset by deleting lock/ is not allowed and may lead to 
-        unpleasant side effects. Locking a locked dataset is a no-op.
-        """
-        if not self.is_locked:
-            os.makedirs(self.lock_dir, exist_ok=True)
+    def list_data(self):
+        files = []
+        for data_file in glob(os.path.join(self.data_dir, '**'), recursive=True):
+            relative_path = os.path.relpath(os.path.normpath(data_file), self.data_dir)
+            if os.path.isdir(data_file):
+                relative_path += "/"
+            files.append(relative_path)
+        return files
 
     def metadata_path(self, spec_id):
         """
@@ -91,13 +78,42 @@ class Dataset(object):
             json.dump(data, f)
         return data
 
+    def delete_metadata(self, spec_id):
+        """
+        Delete the JSON file containing the metadata specified by the given identifier.
+        :param spec_id: Metadata specification identifier. Must be a valid IPTK identifier.
+        """
+        path = self.metadata_path(spec_id)
+        try:
+            os.remove(path)
+        except FileNotFoundError:
+            pass
+        return True
+        
+    @property
+    def metadata_sets(self):
+        meta_path = os.path.join(self.path, "meta", "*.json")
+        available_specs = []
+        for path in glob(meta_path):
+            basename = os.path.basename(path)
+            spec = os.path.splitext(basename)[0]
+            available_specs.append(spec)
+        return available_specs
+
     def archive(self):
         """
         Creates an archive of this dataset, including metadata. The returned
         object is a generator that can be iterated over to create the complete
         archive.
         """
-        return None
+        z = zipstream.ZipFile(mode='w', compression=zipstream.ZIP_DEFLATED)
+        data_path = self.data_dir
+        for root, dirs, files in os.walk(data_path):
+            for f in files:
+                full_path = os.path.join(root, f)
+                if not os.path.islink(full_path):
+                    z.write(full_path, os.path.relpath(full_path, data_path))
+        return z
 
     def __repr__(self):
         return f"<{self.__class__.__name__} {self.identifier}>"
