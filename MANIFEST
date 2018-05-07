@@ -4,7 +4,8 @@ setup.py
 iptk/__init__.py
 iptk/dataset.py
 iptk/dataset_store.py
-iptk/docker_utils.py
+iptk/docker_image.py
+iptk/job.py
 iptk/json_utils.py
+iptk/metadata.py
 iptk/metadata_spec.py
-iptk/runner.py

@@ -42,6 +42,8 @@ class DockerImage(object):
             token = requests.get(token_url, params=token_params, json=True).json()["token"]
             headers["Authorization"] = f"Bearer {token}"
             r = requests.head(manifest_url, headers=headers)
+        if r.status_code != 200:
+            raise ValueError(f"Could not get manifest from {manifest_url}. Check image reference.")
         return r.headers['Docker-Content-Digest']
 
     def resolve(self, reference):

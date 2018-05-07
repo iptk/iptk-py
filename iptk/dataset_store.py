@@ -1,5 +1,6 @@
 import os
 from .dataset import Dataset
+from glob import iglob
 
 class DatasetStore(object):
     """
@@ -15,8 +16,16 @@ class DatasetStore(object):
         subdir = "/".join(chars)
         path = os.path.join(self.root_dir, subdir, dataset_id)
         return path
-        
+    
     def dataset(self, dataset_id):
-        dataset = Dataset(self.dataset_path(dataset_id))
+        """
+        Return a dataset with the given identifier. The corresponding directory
+        will be created if it does not exist.
+        """
+        dataset = Dataset(self.dataset_path(dataset_id), create_ok=True)
         return dataset
     
+    def list_datasets(self):
+        template = os.path.join(self.root_dir, '*', '*', '*', '*', '*/')
+        for path in iglob(template):
+            yield Dataset(path)

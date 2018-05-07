@@ -1,4 +1,5 @@
 import os, re, json, shutil, zipstream
+from .metadata import Set as MetadataSet
 from glob import glob
 
 class Dataset(object):
@@ -10,15 +11,19 @@ class Dataset(object):
     """
     def __init__(self, path, create_ok=False):
         super().__init__()
-        identifier = os.path.basename(path)
+        identifier = os.path.basename(path.rstrip('/'))
         if not re.match("^[0-9a-z]{40}$", identifier):
             raise ValueError('Invalid dataset identifier')
         if create_ok:
             os.makedirs(path, exist_ok=True)
         if not os.path.exists(path):
             raise ValueError(f'Path {path} does not exist')
-        self.identifier = identifier
-        self.path = path
+        self._identifier = identifier
+        self._path = path
+
+    @property
+    def identifier(self):
+        return self._identifier
 
     @property
     def data_dir(self):
@@ -26,7 +31,7 @@ class Dataset(object):
         Return the path to the data/ subfolder of this dataset. The folder will
         be created if it does not exist.
         """
-        path = os.path.join(self.path, 'data')
+        path = os.path.join(self._path, 'data')
         os.makedirs(path, exist_ok=True)
         return path
 
@@ -38,67 +43,6 @@ class Dataset(object):
                 relative_path += "/"
             files.append(relative_path)
         return files
-
-    def metadata_path(self, spec_id):
-        """
-        Returns the path to the JSON file containing the metadata set compliant
-        with the given metadata specification identifier for this dataset. This
-        method will always return a path, even if no file exists at that 
-        location.
-        """
-        meta_path = os.path.join(self.path, "meta")
-        if not os.path.exists(meta_path):
-            os.makedirs(meta_path, exist_ok=True)
-        json_path = os.path.join(meta_path, f"{spec_id}.json")
-        return json_path
-
-    def get_metadata(self, spec_id):
-        """
-        Read the metadata of this dataset for the given metadata specification
-        identifier. Returns an empty dictionary if no metadata has been set for
-        the identifier.
-        """
-        path = self.metadata_path(spec_id)
-        if not os.path.exists(path):
-            return {}
-        with open(path, "r") as f:
-            dictionary = json.load(f)
-        return dictionary
-
-    def set_metadata(self, spec_id, data):
-        """
-        Set the metadata to store for a specified metadata specification. This
-        method will create a new metadata set if none existed before.
-        
-        :param spec_id: Metadata specification identifier. Must be a valid IPTK identifier.
-        :param data: The data to store in the metadata set. Must be a JSON-serializable dictionary.
-        """
-        path = self.metadata_path(spec_id)
-        with open(path, "w") as f:
-            json.dump(data, f)
-        return data
-
-    def delete_metadata(self, spec_id):
-        """
-        Delete the JSON file containing the metadata specified by the given identifier.
-        :param spec_id: Metadata specification identifier. Must be a valid IPTK identifier.
-        """
-        path = self.metadata_path(spec_id)
-        try:
-            os.remove(path)
-        except FileNotFoundError:
-            pass
-        return True
-        
-    @property
-    def metadata_sets(self):
-        meta_path = os.path.join(self.path, "meta", "*.json")
-        available_specs = []
-        for path in glob(meta_path):
-            basename = os.path.basename(path)
-            spec = os.path.splitext(basename)[0]
-            available_specs.append(spec)
-        return available_specs
 
     def archive(self):
         """
@@ -115,6 +59,25 @@ class Dataset(object):
                     z.write(full_path, os.path.relpath(full_path, data_path))
         return z
 
+    def metadata_set(self, spec_id):
+        """
+        Returns an iptk.metadata.set for this dataset and the given metadata 
+        specification identifier. The returned set can be used to read and 
+        write metadata.
+        """
+        return MetadataSet(self, spec_id)
+        
+    @property
+    def metadata_sets(self):
+        meta_path = os.path.join(self._path, "meta", "*.json")
+        available_sets = []
+        for path in glob(meta_path):
+            basename = os.path.basename(path)
+            spec = os.path.splitext(basename)[0]
+            metadata_set = MetadataSet(self, spec)
+            available_sets.append(metadata_set)
+        return available_sets
+
     def __repr__(self):
-        return f"<{self.__class__.__name__} {self.identifier}>"
+        return f"<{self.__class__.__name__} {self._identifier}>"
         
