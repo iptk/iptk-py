@@ -17,7 +17,7 @@ class Job(object):
         self.image = DockerImage(image_reference)
         self.command = command
         self.inputs = []
-        self.resource_requests = []
+        self.resource_requests = {}
 
     def add_input_dataset(self, dataset_id, path="/input"):
         input = {
@@ -39,8 +39,7 @@ class Job(object):
         again with the same type argument will replace the original value.
         Returns the updated list of resource requests.
         """
-        request = {resource_type: quantity}
-        self.resource_requests.append(request)
+        self.resource_requests[resource_type] = quantity
         return self.resource_requests
     
     def enqueue(self, dataset_store):
