@@ -68,15 +68,19 @@ class Dataset(object):
         return MetadataSet(self, spec_id)
         
     @property
-    def metadata_sets(self):
+    def metadata_specs(self):
+        """
+        Lists the available metadata specification identifiers for this 
+        dataset. Use the metadata_set method to retrieve the corresponding 
+        metadata set.
+        """
         meta_path = os.path.join(self._path, "meta", "*.json")
-        available_sets = []
+        available_specs = []
         for path in glob(meta_path):
             basename = os.path.basename(path)
             spec = os.path.splitext(basename)[0]
-            metadata_set = MetadataSet(self, spec)
-            available_sets.append(metadata_set)
-        return available_sets
+            available_specs.append(spec)
+        return available_specs
 
     def __repr__(self):
         return f"<{self.__class__.__name__} {self._identifier}>"
