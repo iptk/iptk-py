@@ -67,7 +67,6 @@ class Dataset(object):
         """
         return MetadataSet(self, spec_id)
         
-    @property
     def metadata_specs(self):
         """
         Lists the available metadata specification identifiers for this 
