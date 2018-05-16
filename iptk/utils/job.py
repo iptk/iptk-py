@@ -8,13 +8,20 @@ class Job(object):
     An IPTK job is stored like any other IPTK metadata. This is a convenience
     class to create an empty IPTK dataset and store the job definition inside.
     This class will make sure that the same dataset identifier is used for 
-    equivalent jobs, thus implementing a simple cache algorithm. Docker image
-    references will be resolved and converted to a digest-based format upon
-    job creation.
+    equivalent jobs, thus implementing a simple cache algorithm. 
+    The image_reference parameter can be a string containing a Docker image
+    reference, a full image spec within a dict, or a DockerImage object.
     """
-    def __init__(self, image_reference, command=[]):
+    def __init__(self, image_reference=None, command=[]):
         super(Job, self).__init__()
-        self.image = DockerImage(image_reference)
+        if isinstance(image, DockerImage):
+            self.image = image
+        elif isinstance(image, str):
+            self.image = DockerImage(image)
+        elif isinstance(image, dict):
+            self.image = DockerImage.from_dict(image)
+        else:
+            raise ValueError(f"{image_reference} does not specify a Docker image")
         self.command = command
         self.inputs = []
         self.resource_requests = {}
