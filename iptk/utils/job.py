@@ -14,12 +14,12 @@ class Job(object):
     """
     def __init__(self, image_reference=None, command=[]):
         super(Job, self).__init__()
-        if isinstance(image, DockerImage):
-            self.image = image
-        elif isinstance(image, str):
-            self.image = DockerImage(image)
-        elif isinstance(image, dict):
-            self.image = DockerImage.from_dict(image)
+        if isinstance(image_reference, DockerImage):
+            self.image = image_reference
+        elif isinstance(image_reference, str):
+            self.image = DockerImage(image_reference)
+        elif isinstance(image_reference, dict):
+            self.image = DockerImage.from_dict(image_reference)
         else:
             raise ValueError(f"{image_reference} does not specify a Docker image")
         self.command = command
