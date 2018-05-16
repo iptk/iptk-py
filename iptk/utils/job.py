@@ -1,5 +1,6 @@
 #!/usr/local/bin/python3
 import requests
+from shlex import split
 from .docker_image import DockerImage
 from .json import json_hash, json_pretty
 
@@ -22,6 +23,8 @@ class Job(object):
             self.image = DockerImage.from_dict(image_reference)
         else:
             raise ValueError(f"{image_reference} does not specify a Docker image")
+        if isinstance(command, str):
+            command = split(command)
         self.command = command
         self.inputs = []
         self.resource_requests = {}
