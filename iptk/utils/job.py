@@ -36,7 +36,8 @@ class Job(object):
             "path": path
         }
         self.inputs.append(input)
-
+        self.sort_inputs()
+        
     def to_json(self):
         return json_pretty(self.spec)
         
@@ -51,6 +52,9 @@ class Job(object):
         """
         self.resource_requests[resource_type] = quantity
         return self.resource_requests
+    
+    def sort_inputs(self):
+        self.inputs = sorted(self.inputs, key=lambda x: x.get("path", ""))
     
     def enqueue(self, dataset_store):
         """
@@ -82,6 +86,7 @@ class Job(object):
         not include optional fields that are only relevant to the job scheduler
         (e.g. resource requests)
         """
+        self.sort_inputs()
         keys = ["version", "image", "command", "inputs"]
         spec = {x: self.spec[x] for x in keys}
         return spec
